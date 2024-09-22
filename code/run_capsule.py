@@ -30,7 +30,7 @@ def run():
 
             collection_name = job_dict['collection_name']
                 
-            if job_dict['status'] == "success":
+            if job_dict['status'] == "success":  # Otherwise, could be skipped or failed
                 result_json = os.path.join(result_folder, f"docDB_{collection_name}.json")
                 with open(result_json, 'r') as f:
                     result_dict = json.load(f)
