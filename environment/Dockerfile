@@ -10,7 +10,8 @@ COPY git-askpass /
 
 RUN pip install --no-cache-dir \
     s3fs \
-    aind_data_access_api[docDB]
+    aind_data_access_api[docDB] \
+    awscli==1.29.18
 
 ADD "https://github.com/coder/code-server/releases/download/v4.21.1/code-server-4.21.1-linux-amd64.tar.gz" /.code-server/code-server.tar.gz
 
