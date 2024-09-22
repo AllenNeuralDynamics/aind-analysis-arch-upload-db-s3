@@ -1,0 +1,22 @@
+{
+    "remote.autoForwardPortsSource": "hybrid",
+    "explorer.confirmDragAndDrop": false,
+    "workbench.colorTheme": "One Dark Pro Darker",
+    "diffEditor.hideUnchangedRegions.enabled": true,
+    "editor.rulers": [
+        100
+    ],
+    "autoDocstring.docstringFormat": "numpy",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "git.enableSmartCommit": true,
+    "workbench.editor.wrapTabs": true,
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": false,
+        "markdown": false,
+        "scminput": false
+    },
+    "git.useIntegratedAskPass": false
+}
