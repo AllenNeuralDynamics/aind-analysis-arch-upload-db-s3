@@ -1,9 +1,0 @@
-{
-	"version": 1,
-	"attached_datasets": [
-		{
-			"id": "a46d841e-aec9-47e6-baac-44a7227b2216",
-			"mount": "aind_analysis_arch_pipeline_results"
-		}
-	]
-}
