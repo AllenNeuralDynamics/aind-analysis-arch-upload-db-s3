@@ -15,7 +15,7 @@ from utils.docDB_io import (
 from utils.aws_io import upload_result_to_s3
 
 # Setup logging
-LOG_FILE_PATH = '/capsule/results/upload.log'
+LOG_FILE_PATH = '/root/capsule/results/upload.log'
 logging.basicConfig(
     filename=LOG_FILE_PATH,
     level=logging.INFO,
