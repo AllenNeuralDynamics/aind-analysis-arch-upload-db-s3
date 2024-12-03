@@ -56,6 +56,9 @@ def process_job(job_json, doc_db_client):
 def run():
     all_jobs_jsons = glob.glob('/root/capsule/data/**/docDB_job_manager.json', recursive=True)
 
+    if len(all_jobs_jsons) == 0:
+        return
+
     # Use a thread pool to process jobs in parallel
     num_threads = min(cpu_count(), len(all_jobs_jsons))  # Use up to the number of CPU cores or the number of jobs, whichever is smaller
     with DocumentDbSSHClient(credentials=credentials) as doc_db_client:
