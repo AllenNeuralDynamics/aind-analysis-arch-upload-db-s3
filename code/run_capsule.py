@@ -67,7 +67,7 @@ def process_job(job_json, doc_db_client):
         logging.error(f"Error processing job {job_hash}: {e}")
 
 def run():
-    all_jobs_jsons = glob.glob('/root/capsule/data/**/docDB_job_manager.json', recursive=True)
+    all_jobs_jsons = glob.glob(f'{SCRIPT_DIR}/../data/**/docDB_job_manager.json', recursive=True)
 
     if len(all_jobs_jsons) == 0:
         logging.warning("No jobs found to process.")
