@@ -14,13 +14,13 @@ from utils.docDB_io import (
 )
 from utils.aws_io import upload_result_to_s3
 
-# Setup logging
-LOG_FILE_PATH = '/root/capsule/results/upload.log'
-logging.basicConfig(
-    filename=LOG_FILE_PATH,
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+# Get script directory
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+
+logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    handlers=[logging.FileHandler(f'{SCRIPT_DIR}/../results/upload.log'),
+                              logging.StreamHandler()])
 
 S3_RESULTS_ROOT = f's3://aind-behavior-data/foraging_nwb_bonsai_processed/v2/'
 
