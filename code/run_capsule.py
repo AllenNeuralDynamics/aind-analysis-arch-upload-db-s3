@@ -30,13 +30,11 @@ def reformat_result_dict_for_docDB(result_dict, status):
     subject_id, session_date, _ = split_nwb_name(result_dict["nwb_name"])
 
     # -- Basic fields --
-    dict_to_docDB = {
-        field: result_dict[field]
-        for field in [
-            "analysis_spec",
-            "nwb_name",
-        ]
-    }
+    dict_to_docDB = {"nwb_name": result_dict["nwb_name"]}
+    analysis_spec = result_dict["analysis_spec"].copy()
+    # remove a field added during analysis wrapper but not initially in analysis_spec (that generates the hash)
+    analysis_spec["analysis_args"]["fit_kwargs"]["DE_kwargs"].pop("workers", None)
+
     dict_to_docDB.update(
         {
             "_id": result_dict["job_hash"],
@@ -44,31 +42,38 @@ def reformat_result_dict_for_docDB(result_dict, status):
             "s3_location": None,  # Update later if status = success
             "subject_id": subject_id,
             "session_date": session_date,
+            "analysis_spec": analysis_spec,
         }
     )   
 
     # If status is not success, return without other fields
     if status != "success":
         return dict_to_docDB
-    
+
     # -- Otherwise, add more fields for results --
     more_fields_to_copy = [
         "analysis_datetime",
         "analysis_libs_to_track_ver",
         "analysis_time_spent_in_sec",
     ]
-    
+
     # Simplify analysis_results (removing latent variables etc)
     analysis_results = result_dict["analysis_results"].copy()
+    analysis_results.pop("population", None)
+    analysis_results.pop("population_energies", None)
+    analysis_results.pop("fitted_latent_variables", None)
+    analysis_results["cross_validation"].pop("fitting_results_each_fold", None)
+    analysis_results["fit_settings"].pop("fit_reward_history", None)
+    analysis_results["fit_settings"].pop("fit_choice_history", None)
 
     # Fields that need some modifications or added
     dict_to_docDB.update(
         {
             **{field: result_dict[field] for field in more_fields_to_copy},
             "s3_location": f"{S3_RESULTS_ROOT}/{result_dict['job_hash']}",
+            "analysis_results": analysis_results,
         }
     )  
-
     return dict_to_docDB
 
 # Helper function to process each job
