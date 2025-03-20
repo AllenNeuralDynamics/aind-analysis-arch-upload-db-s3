@@ -45,6 +45,7 @@ def process_job(job_json, doc_db_client):
                 result_dict=result_dict,
                 collection_name=collection_name,
                 doc_db_client=doc_db_client,
+                skip_already_exists=True,
             )
             job_dict.update(insert_result_response)
 
@@ -74,7 +75,7 @@ def run():
         return
 
     # Use a thread pool to process jobs in parallel
-    num_threads = min(cpu_count(), len(all_jobs_jsons))  # Use up to the number of CPU cores or the number of jobs, whichever is smaller
+    num_threads = 100  # since it is not a very CPU-heavy task
     with DocumentDbSSHClient(credentials=credentials) as doc_db_client:
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
             list(tqdm(executor.map(lambda job_json: process_job(job_json, doc_db_client), all_jobs_jsons), total=len(all_jobs_jsons), desc='Processing jobs'))

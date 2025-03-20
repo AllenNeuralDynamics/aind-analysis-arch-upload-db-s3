@@ -43,7 +43,7 @@ def retry_on_ssh_timeout(max_retries=MAX_SSH_RETRIES, timeout=TIMEOUT):
         return wrapper
     return decorator
 
-def insert_result_to_docDB_ssh(result_dict, collection_name, doc_db_client) -> dict:
+def insert_result_to_docDB_ssh(result_dict, collection_name, doc_db_client, skip_already_exists=True) -> dict:
     """_summary_
 
     Parameters
@@ -62,10 +62,19 @@ def insert_result_to_docDB_ssh(result_dict, collection_name, doc_db_client) -> d
     db = doc_db_client.collection
 
     # Check if job hash already exists, if yes, log warning, but still insert
-    if db.find_one({"job_hash": result_dict["job_hash"]}):
+    if_exists = db.find_one({"job_hash": result_dict["job_hash"]})
+    
+    if if_exists:
         logger.warning(f"Job hash {result_dict['job_hash']} already exists in {collection_name} in docDB")
-        logger.warning(f" -- skipped --")
-        return 
+
+        if skip_already_exists:
+            logger.warning(f" -- skipped --")
+            return {
+                "docDB_upload_status": "success (duplicated)",
+                "docDB_id": if_exists['_id'],
+                "collection_name": collection_name,
+                }
+        
     # Insert (this will add _id automatically to result_dict)
     response = db.insert_one(result_dict)
     result_dict["_id"] = str(result_dict["_id"])
