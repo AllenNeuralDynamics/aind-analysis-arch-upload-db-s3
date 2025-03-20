@@ -79,6 +79,7 @@ def reformat_result_dict_for_docDB(result_dict, status):
 # Helper function to process each job
 def upload_one_job(job_json, skip_already_exists=False):
     result_folder = os.path.dirname(job_json)
+    job_hash = os.path.basename(result_folder)
 
     try:
         # Load job_json and result_json
@@ -87,10 +88,9 @@ def upload_one_job(job_json, skip_already_exists=False):
             
         result_json = os.path.join(result_folder, f"docDB_{job_dict['collection_name']}.json")
 
-        with open(result_json, 'r') as f:
-            result_dict = json.load(f)
-
-        job_hash = result_dict['job_hash']
+        if job_dict["status"] == "success":
+            with open(result_json, 'r') as f:
+                result_dict = json.load(f)
 
         # Do some ad-hoc formatting to the result_dict for backward compatibility
         dict_to_docDB = reformat_result_dict_for_docDB(
@@ -124,7 +124,9 @@ def upload_one_job(job_json, skip_already_exists=False):
         logging.error(f"Error processing job {job_hash}: {e}")
 
 def run():
-    all_jobs_jsons = glob.glob(f'{SCRIPT_DIR}/../data/**/docDB_job_manager.json', recursive=True)[:1]
+    all_jobs_jsons = glob.glob(f'{SCRIPT_DIR}/../data/**/docDB_job_manager.json', recursive=True)
+    
+    all_jobs_jsons = [job_json for job_json in all_jobs_jsons if "75ff828c5caea90f20788878e2a5d753181e309d32444e0ac0d2e2516853fe03" in job_json]
 
     if len(all_jobs_jsons) == 0:
         logging.warning("No jobs found to process.")
