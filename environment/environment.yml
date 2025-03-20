@@ -25,8 +25,8 @@ credentials:
   description: DOC_DB_SSH_USERNAME
   value: DOC_DB_SSH_USERNAME
 - type: aws
-  id: fN28f3LqY27fSDF2
-  description: amazon
+  id: S6UUigYHUiIBTIh1
+  description: AWS Assumable Role - aind-codeocean-user
   access_key_id: AWS_ACCESS_KEY_ID
   secret_access_key: AWS_SECRET_ACCESS_KEY
   region: AWS_DEFAULT_REGION
