@@ -64,6 +64,8 @@ def insert_result_to_docDB_ssh(result_dict, collection_name, doc_db_client) -> d
     # Check if job hash already exists, if yes, log warning, but still insert
     if db.find_one({"job_hash": result_dict["job_hash"]}):
         logger.warning(f"Job hash {result_dict['job_hash']} already exists in {collection_name} in docDB")
+        logger.warning(f" -- skipped --")
+        return 
     # Insert (this will add _id automatically to result_dict)
     response = db.insert_one(result_dict)
     result_dict["_id"] = str(result_dict["_id"])
