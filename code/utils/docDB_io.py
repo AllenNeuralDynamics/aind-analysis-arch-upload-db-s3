@@ -9,39 +9,44 @@ SSH_ERRORS = [ServerSelectionTimeoutError, HandlerSSHTunnelForwarderError]
 import traceback
 from datetime import datetime
 
-from aind_data_access_api.document_db_ssh import DocumentDbSSHClient, DocumentDbSSHCredentials
-
-credentials = DocumentDbSSHCredentials()
-credentials.database = "behavior_analysis"
+from aind_data_access_api.document_db import MetadataDbClient
 
 logger = logging.getLogger(__name__)
 
-MAX_SSH_RETRIES = 50
-TIMEOUT = 5 # Time in seconds between retries
+# Set up docDB client
+PROJECT = "dynamic-foraging-analysis"
+prod_db_client = MetadataDbClient(
+    host="api.allenneuraldynamics.org",
+    database="analysis",
+    collection=PROJECT,
+)
 
-def retry_on_ssh_timeout(max_retries=MAX_SSH_RETRIES, timeout=TIMEOUT):
+
+def upload_docDB_record_to_prod(result_dict, skip_already_exists=True):
+    """Upload a result dictionary to the production DocumentDB.
+
+    Parameters
+    ----------
+    result_dict : _type_
+        _description_
+    skip_already_exists : bool, optional
+        _description_, by default True
     """
-    Decorator to retry a function upon ServerSelectionTimeoutError.
-    """
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            retries = 0
-            while retries < max_retries:
-                try:
-                    return func(*args, **kwargs)
-                # Suppose all other exceptions have been captured inside func!
-                except SSH_ERRORS as e:  
-                    retries += 1
-                    msg = f"{str(e)}\n{traceback.format_exc()}\nRetry {retries}/{max_retries}..."
-                    logger.warning(msg)
-                    print(msg, flush=True)
-                    if retries >= max_retries:
-                        logger.error("Max retries reached. Raising exception.")
-                        raise
-                    time.sleep(timeout)
-        return wrapper
-    return decorator
+    
+    # Check if job hash already exists, if yes, log warning, but still insert
+    existed_record = prod_db_client._get_records({"_id": result_dict["job_hash"]})
+    
+    if len(existed_record):
+        logger.warning(f"Job hash {result_dict['job_hash']} already exists in {collection_name} in docDB")
+
+        if skip_already_exists:
+            logger.warning(f"-- Skipped!")
+            return "skipped -- already exists"
+
+    # Otherwise, upsert the record (add a new record or update an existing one)
+    resp_write = prod_db_client.upsert_one_docdb_record(result_dict)
+    
+    return resp_write
 
 def insert_result_to_docDB_ssh(result_dict, collection_name, doc_db_client, skip_already_exists=True) -> dict:
     """_summary_
@@ -85,31 +90,3 @@ def insert_result_to_docDB_ssh(result_dict, collection_name, doc_db_client, skip
     else:
         logger.info(f"Inserted {response.inserted_id} to {collection_name} in docDB")
         return {"docDB_upload_status": "success", "docDB_id": response.inserted_id, "collection_name": collection_name}
-
-
-def update_job_manager(job_hash, update_dict, doc_db_client):
-    """_summary_
-
-    Parameters
-    ----------
-    job_hash : _type_
-        _description_
-    status : _type_
-        _description_
-    log : _type_
-        _description_
-    """
-    doc_db_client.collection_name = "job_manager"
-    db = doc_db_client.collection
-    
-    # Check if job hash already exists, if yes, log warning, but still insert
-    if not db.find_one({"job_hash": job_hash}):
-        logger.warning(f"Job hash {job_hash} does not exist in job_manager in docDB! Skipping update.")
-        return
-    
-    # Update job status and log
-    response = db.update_one(
-        {"job_hash": job_hash},
-        {"$set": update_dict},
-    )
-    

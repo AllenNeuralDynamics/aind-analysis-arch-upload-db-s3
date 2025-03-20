@@ -2,7 +2,12 @@
 import os, subprocess
 import logging
 
+from aind_data_access_api.document_db import MetadataDbClient
+
 logger = logging.getLogger(__name__)
+
+PROJECT = "dynamic-foraging-analysis"
+S3_RESULTS_ROOT = f"s3://aind-{PROJECT}-prod-o5171v"
 
 def setup_aws_cli():
     aws_dir = os.path.expanduser("~/.aws")
