@@ -9,7 +9,8 @@ from multiprocessing import cpu_count
 from utils.docDB_io import (
     upload_docDB_record_to_prod,
 )
-from utils.aws_io import upload_result_to_s3
+from utils.aws_io import upload_result_to_s3, S3_RESULTS_ROOT
+from utils.reformat import split_nwb_name
 
 # Get script directory
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -19,29 +20,86 @@ logging.basicConfig(level=logging.INFO,
                     handlers=[logging.FileHandler(f'{SCRIPT_DIR}/../results/upload.log'),
                               logging.StreamHandler()])
 
-# Helper function to process each job
-def upload_one_job(job_json):
-    result_folder = os.path.dirname(job_json)
-    job_hash = os.path.basename(os.path.dirname(job_json))
+
+def reformat_result_dict_for_docDB(result_dict, status):
+    """To match the latest docDB format for MLE fitting.
     
+    See https://github.com/AllenNeuralDynamics/aind-analysis-arch-result-access/blob/d8f797680f7dce316f0025b1efc976fb3bf78af3/src/aind_analysis_arch_result_access/patch/patch_20250213_migrate_database.py
+    """
+
+    subject_id, session_date, _ = split_nwb_name(result_dict["nwb_name"])
+
+    # -- Basic fields --
+    dict_to_docDB = {
+        field: result_dict[field]
+        for field in [
+            "analysis_spec",
+            "nwb_name",
+        ]
+    }
+    dict_to_docDB.update(
+        {
+            "_id": result_dict["job_hash"],
+            "status": status,
+            "s3_location": None,  # Update later if status = success
+            "subject_id": subject_id,
+            "session_date": session_date,
+        }
+    )   
+
+    # If status is not success, return without other fields
+    if status != "success":
+        return dict_to_docDB
+    
+    # -- Otherwise, add more fields for results --
+    more_fields_to_copy = [
+        "analysis_datetime",
+        "analysis_libs_to_track_ver",
+        "analysis_time_spent_in_sec",
+    ]
+    
+    # Simplify analysis_results (removing latent variables etc)
+    analysis_results = result_dict["analysis_results"].copy()
+
+    # Fields that need some modifications or added
+    dict_to_docDB.update(
+        {
+            **{field: result_dict[field] for field in more_fields_to_copy},
+            "s3_location": f"{S3_RESULTS_ROOT}/{result_dict['job_hash']}",
+        }
+    )  
+
+    return dict_to_docDB
+
+# Helper function to process each job
+def upload_one_job(job_json, skip_already_exists=False):
+    result_folder = os.path.dirname(job_json)
+
     try:
+        # Load job_json and result_json
         with open(job_json, 'r') as f:
             job_dict = json.load(f)
+            
+        result_json = os.path.join(result_folder, f"docDB_{job_dict['collection_name']}.json")
 
-        collection_name = job_dict['collection_name']
-        
-        if job_dict['status'] == "success":
-            result_json = os.path.join(result_folder, f"docDB_{collection_name}.json")
-            with open(result_json, 'r') as f:
-                result_dict = json.load(f)
+        with open(result_json, 'r') as f:
+            result_dict = json.load(f)
 
-            # Insert result_dict to DocumentDB
-            upsert_result_to_docDB = upload_docDB_record_to_prod(
-                result_dict=result_dict,
-                skip_already_exists=True,
-            )
-            job_dict.update(upsert_result_to_docDB)
+        job_hash = result_dict['job_hash']
 
+        # Do some ad-hoc formatting to the result_dict for backward compatibility
+        dict_to_docDB = reformat_result_dict_for_docDB(
+            result_dict=result_dict, status=job_dict["status"]
+        )
+
+        # Insert result_dict to DocumentDB
+        upsert_result_to_docDB = upload_docDB_record_to_prod(
+            dict_to_docDB=dict_to_docDB,
+            skip_already_exists=skip_already_exists,
+        )
+
+        # If job is successful AND upload docDB is success, upload the result to S3
+        if job_dict["status"] == "success" and upsert_result_to_docDB == "upload docDB success":
             # Upload results to S3
             s3_path = S3_RESULTS_ROOT + job_hash
             upload_result_to_s3(result_folder + '/', s3_path + '/')
@@ -56,7 +114,7 @@ def upload_one_job(job_json):
             doc_db_client=doc_db_client,
         )
         logging.info(f"Successfully processed job: {job_hash}")
-    
+
     except Exception as e:
         logging.error(f"Error processing job {job_hash}: {e}")
 
