@@ -21,23 +21,23 @@ logging.basicConfig(level=logging.INFO,
                               logging.StreamHandler()])
 
 
-def reformat_result_dict_for_docDB(result_dict, status):
+def prepare_dict_for_docDB(job_dict, result_dict=None):
     """To match the latest docDB format for MLE fitting.
     
     See https://github.com/AllenNeuralDynamics/aind-analysis-arch-result-access/blob/d8f797680f7dce316f0025b1efc976fb3bf78af3/src/aind_analysis_arch_result_access/patch/patch_20250213_migrate_database.py
     """
-
-    subject_id, session_date, _ = split_nwb_name(result_dict["nwb_name"])
+    status = job_dict["status"]
+    subject_id, session_date, _ = split_nwb_name(job_dict["nwb_name"])
 
     # -- Basic fields --
-    dict_to_docDB = {"nwb_name": result_dict["nwb_name"]}
-    analysis_spec = result_dict["analysis_spec"].copy()
+    dict_to_docDB = {"nwb_name": job_dict["nwb_name"]}
+    analysis_spec = job_dict["analysis_spec"].copy()
     # remove a field added during analysis wrapper but not initially in analysis_spec (that generates the hash)
     analysis_spec["analysis_args"]["fit_kwargs"]["DE_kwargs"].pop("workers", None)
 
     dict_to_docDB.update(
         {
-            "_id": result_dict["job_hash"],
+            "_id": job_dict["job_hash"],
             "status": status,
             "s3_location": None,  # Update later if status = success
             "subject_id": subject_id,
@@ -47,7 +47,7 @@ def reformat_result_dict_for_docDB(result_dict, status):
     )   
 
     # If status is not success, return without other fields
-    if status != "success":
+    if result_dict is None:
         return dict_to_docDB
 
     # -- Otherwise, add more fields for results --
@@ -77,24 +77,27 @@ def reformat_result_dict_for_docDB(result_dict, status):
     return dict_to_docDB
 
 # Helper function to process each job
-def upload_one_job(job_json, skip_already_exists=False):
+def upload_one_job(job_json, skip_already_exists=True):
     result_folder = os.path.dirname(job_json)
-    job_hash = os.path.basename(result_folder)
 
     try:
         # Load job_json and result_json
         with open(job_json, 'r') as f:
             job_dict = json.load(f)
             
-        result_json = os.path.join(result_folder, f"docDB_{job_dict['collection_name']}.json")
-
-        if job_dict["status"] == "success":
+        job_hash, status = job_dict["job_hash"], job_dict["status"]
+        
+        if status == "success":
+            result_json = os.path.join(result_folder, f"docDB_{job_dict['collection_name']}.json")
             with open(result_json, 'r') as f:
                 result_dict = json.load(f)
+        else:
+            result_dict = None
 
         # Do some ad-hoc formatting to the result_dict for backward compatibility
-        dict_to_docDB = reformat_result_dict_for_docDB(
-            result_dict=result_dict, status=job_dict["status"]
+        dict_to_docDB = prepare_dict_for_docDB(
+            job_dict=job_dict,
+            result_dict=result_dict,
         )
 
         # Insert result_dict to DocumentDB
@@ -104,7 +107,7 @@ def upload_one_job(job_json, skip_already_exists=False):
         )
 
         # If job is successful AND upload docDB is success, upload the result to S3
-        if job_dict["status"] == "success" and upsert_result_to_docDB == "upload docDB success":
+        if status == "success" and upsert_result_to_docDB == "upload docDB success":
             # Upload results to S3
             s3_path = S3_RESULTS_ROOT + job_hash
             upload_result_to_s3(result_folder + '/', s3_path + '/')
@@ -112,12 +115,6 @@ def upload_one_job(job_json, skip_already_exists=False):
                 "s3_location": s3_path,
             })
 
-        # Update job manager
-        update_job_manager(
-            job_hash=job_hash,
-            update_dict=job_dict,
-            doc_db_client=doc_db_client,
-        )
         logging.info(f"Successfully processed job: {job_hash}")
 
     except Exception as e:
@@ -126,7 +123,7 @@ def upload_one_job(job_json, skip_already_exists=False):
 def run():
     all_jobs_jsons = glob.glob(f'{SCRIPT_DIR}/../data/**/docDB_job_manager.json', recursive=True)
     
-    all_jobs_jsons = [job_json for job_json in all_jobs_jsons if "75ff828c5caea90f20788878e2a5d753181e309d32444e0ac0d2e2516853fe03" in job_json]
+    all_jobs_jsons = [job_json for job_json in all_jobs_jsons if "8a9287f4ee348ff90f8d833723a05d07ced3c06ba47c2cadbbaa1eeaa4a44166" in job_json]
 
     if len(all_jobs_jsons) == 0:
         logging.warning("No jobs found to process.")
