@@ -123,8 +123,6 @@ def upload_one_job(job_json, skip_already_exists=True):
 def run():
     all_jobs_jsons = glob.glob(f'{SCRIPT_DIR}/../data/**/docDB_job_manager.json', recursive=True)
     
-    all_jobs_jsons = [job_json for job_json in all_jobs_jsons if "8a9287f4ee348ff90f8d833723a05d07ced3c06ba47c2cadbbaa1eeaa4a44166" in job_json]
-
     if len(all_jobs_jsons) == 0:
         logging.warning("No jobs found to process.")
         return
