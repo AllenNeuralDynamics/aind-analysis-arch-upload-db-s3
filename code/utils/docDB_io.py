@@ -1,13 +1,4 @@
 import logging
-import time
-from functools import wraps
-from pymongo.errors import ServerSelectionTimeoutError
-from sshtunnel import HandlerSSHTunnelForwarderError
-
-SSH_ERRORS = [ServerSelectionTimeoutError, HandlerSSHTunnelForwarderError]
-
-import traceback
-from datetime import datetime
 
 # --------------
 """This is important to fix the `TypeError: sequence item 1: expected str instance, NoneType found` error
