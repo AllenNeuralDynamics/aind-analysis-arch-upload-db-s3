@@ -22,7 +22,7 @@ prod_db_client = MetadataDbClient(
 )
 
 
-def upload_docDB_record_to_prod(dict_to_docDB, skip_already_exists=True):
+def upload_docDB_record_to_prod(dict_to_docDB, skip_already_exists):
     """Upload a result dictionary to the production DocumentDB.
 
     Parameters
@@ -37,7 +37,7 @@ def upload_docDB_record_to_prod(dict_to_docDB, skip_already_exists=True):
     existed_record = prod_db_client._get_records({"_id": dict_to_docDB["_id"]})
     
     if len(existed_record):
-        logger.warning(f"Job hash {dict_to_docDB['_id']} already exists in {collection_name} in docDB")
+        logger.warning(f"Job hash {dict_to_docDB['_id']} already exists in docDB!")
 
         if skip_already_exists:
             logger.warning(f"-- Skipped!")
@@ -45,7 +45,12 @@ def upload_docDB_record_to_prod(dict_to_docDB, skip_already_exists=True):
 
     # Otherwise, upsert the record (add a new record or update an existing one)
     resp_write = prod_db_client.upsert_one_docdb_record(dict_to_docDB)
-    return "upload docDB success"
+    
+    if resp_write.status_code == 200:
+        return "upload docDB success"
+    
+    logger.error(f"Failed to upload docDB record: {resp_write.status_code} - {resp_write.text}")
+    return "upload docDB failed"
 
 def insert_result_to_docDB_ssh(result_dict, collection_name, doc_db_client, skip_already_exists=True) -> dict:
     """_summary_
