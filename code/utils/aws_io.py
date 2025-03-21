@@ -32,4 +32,4 @@ def upload_directory_to_s3(local_directory, s3_bucket_name, s3_relative_path):
             # Upload file to S3
             s3_client.upload_file(local_path, s3_bucket_name, s3_key)
             
-    logger.info(f"Uploaded {local_path} to s3://{s3_bucket_name}")
+    logger.info(f"Uploaded {local_directory} to s3://{s3_bucket_name}")
