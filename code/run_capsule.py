@@ -114,8 +114,10 @@ def upload_one_job(job_json, skip_already_exists=True):
                 s3_bucket_name=S3_RESULTS_ROOT,
                 s3_relative_path=job_hash,
             )
+        else:
+            logging.info("-- Skipped uploading s3!")
 
-        logging.info(f"Successfully uploaded job: {job_hash}")
+        logging.info(f"Successfully processed job: {job_hash}")
 
     except Exception as e:
         logging.exception(f"Error processing job {job_hash}: {e}")

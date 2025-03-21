@@ -39,7 +39,7 @@ def upload_docDB_record_to_prod(dict_to_docDB, skip_already_exists):
         logger.warning(f"Job hash {dict_to_docDB['_id']} already exists in docDB!")
 
         if skip_already_exists:
-            logger.warning(f"-- Skipped!")
+            logger.warning(f"-- Skipped upserting to docDB!")
             return "skipped -- already exists"
 
     # Otherwise, upsert the record (add a new record or update an existing one)
