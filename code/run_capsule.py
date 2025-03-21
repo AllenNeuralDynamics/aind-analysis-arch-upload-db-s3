@@ -9,7 +9,7 @@ from multiprocessing import cpu_count
 from utils.docDB_io import (
     upload_docDB_record_to_prod,
 )
-from utils.aws_io import upload_result_to_s3, S3_RESULTS_ROOT
+from utils.aws_io import upload_directory_to_s3, S3_RESULTS_ROOT
 from utils.reformat import split_nwb_name
 
 # Get script directory
@@ -108,14 +108,14 @@ def upload_one_job(job_json, skip_already_exists=True):
 
         # If job is successful AND upload docDB is success, upload the result to S3
         if status == "success" and upsert_result_to_docDB == "upload docDB success":
-            # Upload results to S3
-            s3_path = S3_RESULTS_ROOT + job_hash
-            upload_result_to_s3(result_folder + '/', s3_path + '/')
-            job_dict.update({
-                "s3_location": s3_path,
-            })
+            # Upload the whole folder to S3 using the new way (boto3)
+            upload_directory_to_s3(
+                local_directory=result_folder,
+                s3_bucket_name=S3_RESULTS_ROOT,
+                s3_relative_path=job_hash,
+            )
 
-        logging.info(f"Successfully processed job: {job_hash}")
+        logging.info(f"Successfully uploaded job: {job_hash}")
 
     except Exception as e:
         logging.error(f"Error processing job {job_hash}: {e}")
