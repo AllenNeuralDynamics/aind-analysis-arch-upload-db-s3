@@ -80,7 +80,8 @@ def prepare_dict_for_docDB(job_dict, result_dict=None):
 def upload_one_job(job_json, skip_already_exists=True):
     result_folder = os.path.dirname(job_json)
 
-    try:
+    #try:
+    if 1:
         # Load job_json and result_json
         with open(job_json, 'r') as f:
             job_dict = json.load(f)
@@ -117,8 +118,8 @@ def upload_one_job(job_json, skip_already_exists=True):
 
         logging.info(f"Successfully uploaded job: {job_hash}")
 
-    except Exception as e:
-        logging.error(f"Error processing job {job_hash}: {e}")
+   # except Exception as e:
+   #     logging.error(f"Error processing job {job_hash}: {e}")
 
 def run():
     all_jobs_jsons = glob.glob(f'{SCRIPT_DIR}/../data/**/docDB_job_manager.json', recursive=True)
