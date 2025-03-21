@@ -117,7 +117,7 @@ def upload_one_job(job_json, skip_already_exists=True):
 
         logging.info(f"Successfully uploaded job: {job_hash}")
 
-   except Exception as e:
+    except Exception as e:
        logger.exception(f"Error processing job {job_hash}: {e}")
 
 def run():
