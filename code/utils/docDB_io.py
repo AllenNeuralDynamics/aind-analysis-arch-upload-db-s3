@@ -11,6 +11,7 @@ from datetime import datetime
 
 import os
 os.environ["AWS_DEFAULT_REGION"] = "us-west-2"
+print("default region added")
 
 from aind_data_access_api.document_db import MetadataDbClient
 
