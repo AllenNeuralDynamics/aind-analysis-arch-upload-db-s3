@@ -9,9 +9,13 @@ SSH_ERRORS = [ServerSelectionTimeoutError, HandlerSSHTunnelForwarderError]
 import traceback
 from datetime import datetime
 
+# --------------
+"""This is important to fix the `TypeError: sequence item 1: expected str instance, NoneType found` error
+when use MetadataDbClien + IAM role to upsert record to docDB!!!
+"""
 import os
 os.environ["AWS_DEFAULT_REGION"] = "us-west-2"
-print("default region added")
+# --------------
 
 from aind_data_access_api.document_db import MetadataDbClient
 
