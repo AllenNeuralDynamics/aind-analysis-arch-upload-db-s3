@@ -9,6 +9,9 @@ SSH_ERRORS = [ServerSelectionTimeoutError, HandlerSSHTunnelForwarderError]
 import traceback
 from datetime import datetime
 
+import os
+os.environ["AWS_DEFAULT_REGION"] = "us-east-2"
+
 from aind_data_access_api.document_db import MetadataDbClient
 
 logger = logging.getLogger(__name__)
