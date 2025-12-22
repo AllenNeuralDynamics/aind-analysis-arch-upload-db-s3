@@ -13,7 +13,7 @@ from aind_data_access_api.document_db import MetadataDbClient
 logger = logging.getLogger(__name__)
 
 # Set up docDB client
-PROJECT = "dynamic-foraging-analysis"
+PROJECT = "dynamic-foraging-model-fitting"
 prod_db_client = MetadataDbClient(
     host="api.allenneuraldynamics.org",
     database="analysis",
