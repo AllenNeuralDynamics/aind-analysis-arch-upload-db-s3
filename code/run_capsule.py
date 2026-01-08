@@ -123,7 +123,7 @@ def upload_one_job(job_json, skip_already_exists=True):
         logging.info(f"Successfully processed job: {job_hash}")
 
     except Exception as e:
-        logging.exception(f"Error processing job {job_hash}: {e}")
+        logging.exception(f"Error processing job: {e}")
 
 def run():
     all_jobs_jsons = glob.glob(f'{SCRIPT_DIR}/../data/**/docDB_job_manager.json', recursive=True)
@@ -133,7 +133,7 @@ def run():
         return
 
     # Use a thread pool to process jobs in parallel
-    num_threads = 100  # since it is not a very CPU-heavy task
+    num_threads = 50  # since it is not a very CPU-heavy task
     with ThreadPoolExecutor(max_workers=num_threads) as executor:
         list(tqdm(executor.map(lambda job_json: upload_one_job(job_json), all_jobs_jsons), total=len(all_jobs_jsons), desc='Uploading jobs'))
 

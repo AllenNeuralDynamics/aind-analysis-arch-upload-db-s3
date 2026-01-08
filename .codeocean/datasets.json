@@ -1,0 +1,9 @@
+{
+	"version": 1,
+	"attached_datasets": [
+		{
+			"id": "f2247843-64ae-4408-bdb5-7a48eed51b86",
+			"mount": "fitting_results"
+		}
+	]
+}
