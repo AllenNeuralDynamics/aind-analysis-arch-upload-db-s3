@@ -62,7 +62,10 @@ def prepare_dict_for_docDB(job_dict, result_dict=None):
     analysis_results.pop("population", None)
     analysis_results.pop("population_energies", None)
     analysis_results.pop("fitted_latent_variables", None)
-    analysis_results["cross_validation"].pop("fitting_results_each_fold", None)
+
+    if "cross_validation" in analysis_results:
+        analysis_results["cross_validation"].pop("fitting_results_each_fold", None)
+
     analysis_results["fit_settings"].pop("fit_reward_history", None)
     analysis_results["fit_settings"].pop("fit_choice_history", None)
 
